@@ -13,6 +13,7 @@ class DataBaseProvider extends ChangeNotifier {
   final CollectionReference _movies = FirebaseFirestore.instance.collection('movies');
   final CollectionReference _music = FirebaseFirestore.instance.collection('music');
   final CollectionReference _kidstv = FirebaseFirestore.instance.collection('kidstv');
+  final CollectionReference _featureIns = FirebaseFirestore.instance.collection('features');
 
   final List<Map<String, dynamic>> _tvChannelLists = [];
   final List<Map<String, dynamic>> _allTvLists = [];
@@ -29,6 +30,7 @@ class DataBaseProvider extends ChangeNotifier {
   final List<Map<String, dynamic>> _englishMovie = [];
   final List<Map<String, dynamic>> _othersMovie = [];
   final List<Map<String, dynamic>> _hindiMovie = [];
+  final List<Map<String, dynamic>> _appfeatures = [];
 
   List<Map<String, dynamic>> get tvChannelLists => _tvChannelLists;
   List<Map<String, dynamic>> get allTvLists => _allTvLists;
@@ -45,6 +47,7 @@ class DataBaseProvider extends ChangeNotifier {
   List<Map<String, dynamic>> get englishMovie => _englishMovie;
   List<Map<String, dynamic>> get othersMovie => _othersMovie;
   List<Map<String, dynamic>> get hindiMovie => _hindiMovie;
+  List<Map<String, dynamic>> get appfeatures => _appfeatures;
 
   Future<void> getTvChannelLists() async {
     _tvChannelLists.clear();
@@ -237,6 +240,24 @@ class DataBaseProvider extends ChangeNotifier {
 
         if (tvChannelsData != null) {
           _kidsTvList.add(tvChannelsData);
+        }
+      },
+    );
+
+    notifyListeners();
+  }
+
+  Future<void> getFeatures() async {
+    _appfeatures.clear();
+
+    final QuerySnapshot querySnapshot = await _featureIns.get();
+
+    querySnapshot.docs.forEach(
+          (DocumentSnapshot documentSnapshot) {
+        final Map<String, dynamic>? tvChannelsData = documentSnapshot.data() as Map<String, dynamic>?;
+
+        if (tvChannelsData != null) {
+          _appfeatures.add(tvChannelsData);
         }
       },
     );

@@ -20,6 +20,7 @@ Future<void> loadingDataFromDatabase(context) async {
   await databaseProvider.getMusicTvList();
   await databaseProvider.getAllDataList();
   await databaseProvider.seperateMovies();
+  await databaseProvider.getFeatures();
 
   Future.delayed(const Duration(seconds: 3), () {
     Navigator.push(context, MaterialPageRoute(builder: (context) => const HomeScreenView()));

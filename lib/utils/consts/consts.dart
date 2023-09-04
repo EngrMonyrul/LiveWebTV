@@ -5,6 +5,8 @@ const loadingLogo = 'assets/animation_lm33g5pe.json';
 
 const appName = 'Welcome to LiveWebTV';
 
+const List<String> TvCategory = ['All Channel', 'Live Sports', 'Sports Channel', 'Special Movies', 'Movies Channel', 'Music Channel', 'Bengali Channel', 'English Channel', 'Hindi Channel', 'Kids Channel', 'Documentary Channel'];
+
 const List<dynamic> colorsList = [
   LinearGradient(
     colors: [Color(0xffe91e63), Color(0xff00bcd4)],

@@ -1,7 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:livewebtv/controllers/providers/theme_provider.dart';
+import 'package:livewebtv/views/homeScreen/home_screen_view.dart';
 import 'package:livewebtv/views/splashScreen/splash_screen_view.dart';
+import 'package:livewebtv/views/videoPlayerScreen/video_player_view.dart';
 import 'package:provider/provider.dart';
 import 'controllers/providers/database_provider.dart';
 
@@ -52,6 +54,8 @@ class MyApp extends StatelessWidget {
         initialRoute: '/',
         routes: {
           '/': (context) => const SplashScreenView(),
+          '/home': (context) => const HomeScreenView(),
+          '/player': (context) => const VideoPlayerView(videoIndex: 0),
         },
       ),
     );

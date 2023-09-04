@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -20,6 +21,27 @@ class _HomeScreenViewState extends State<HomeScreenView> {
   List<Map<String, dynamic>> dataList = [];
   List<Map<String, dynamic>> filteredList = [];
   int selectedIndex = -1;
+  PageController controller = PageController(viewportFraction: 0.12);
+  String selectedAction = 'All Channel';
+  bool isSelected = false;
+
+  setPageAction(action) {
+    setState(() {
+      selectedAction = action;
+    });
+
+    controller.animateToPage(TvCategory.indexOf(action),
+        curve: Curves.linear, duration: const Duration(milliseconds: 100));
+  }
+
+  setPageController() {
+    controller.addListener(() {
+      int currentIndex = controller.page?.round() ?? 0;
+      setState(() {
+        selectedAction = TvCategory[currentIndex];
+      });
+    });
+  }
 
   void _filterList(String query) {
     setState(() {
@@ -38,12 +60,13 @@ class _HomeScreenViewState extends State<HomeScreenView> {
     // TODO: implement initState
     final moviesProvider = Provider.of<DataBaseProvider>(context, listen: false);
     dataList.addAll(moviesProvider.allItemsList);
-    timeDilation = 3;
+    // timeDilation = 3;
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    final dataPro = Provider.of<DataBaseProvider>(context, listen: false);
     return Consumer<ThemeProvider>(builder: (context, property, child) {
       return Container(
         padding: const EdgeInsets.all(10),
@@ -79,7 +102,9 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                     ],
                   ),
                   if (showSearchButton) buildSearchItems(),
-                  SizedBox(height: MediaQuery.sizeOf(context).height*0.05),
+                  if (!showSearchButton)
+                  SizedBox(height: MediaQuery.sizeOf(context).height * 0.05),
+                  if (!showSearchButton)
                   Text(
                     'Watch All The Shows Free',
                     style: TextStyle(
@@ -87,72 +112,29 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: MediaQuery.sizeOf(context).height*0.02),
-                  Stack(
-                    alignment: Alignment.center,
-                    clipBehavior: Clip.none,
-                    children: [
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height*0.7,
-                        width: MediaQuery.of(context).size.width*0.95,
-                      ),
-                      Positioned(
-                        bottom: -60,
-                        left: 180,
-                        child: Container(
-                          height: MediaQuery.of(context).size.height*0.6,
-                          width: MediaQuery.of(context).size.width*0.3,
-                          decoration: BoxDecoration(
-                              color: Colors.green,
-                              borderRadius: BorderRadius.all(Radius.circular(10)),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black,
-                                  spreadRadius: 20,
-                                  blurRadius: 80,
-                                )
-                              ]
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: -60,
-                        right: 180,
-                        child: Container(
-                          height: MediaQuery.of(context).size.height*0.6,
-                          width: MediaQuery.of(context).size.width*0.3,
-                          decoration: BoxDecoration(
-                              color: Colors.yellow,
-                              borderRadius: BorderRadius.all(Radius.circular(10)),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black,
-                                  spreadRadius: 20,
-                                  blurRadius: 80,
-                                )
-                              ]
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: 0,
-                        child: Container(
-                          height: MediaQuery.of(context).size.height*0.6,
-                          width: MediaQuery.of(context).size.width*0.3,
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.all(Radius.circular(10)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black,
-                                spreadRadius: 20,
-                                blurRadius: 80,
-                              )
-                            ]
-                          ),
-                        ),
-                      ),
-                    ],
+                  if (!showSearchButton)
+                  SizedBox(height: MediaQuery.sizeOf(context).height * 0.1),
+                  if (!showSearchButton)
+                  buildPreviewDesign(context),
+                  if (!showSearchButton)
+                  SizedBox(height: MediaQuery.sizeOf(context).height * 0.2),
+                  if (!showSearchButton)
+                  Container(
+                    height: MediaQuery.sizeOf(context).height * 0.1,
+                    width: MediaQuery.sizeOf(context).width,
+                    child: PageView.builder(
+                      controller: controller,
+                      itemCount: TvCategory.length,
+                      itemBuilder: (context, index) {
+                        return Buttons(
+                            title: TvCategory[index],
+                            isSelected: selectedAction==TvCategory[index],
+                            onTap:(){
+                              setPageAction(TvCategory[index]);
+                            }
+                        );
+                      },
+                    ),
                   )
                 ],
               ),
@@ -161,6 +143,65 @@ class _HomeScreenViewState extends State<HomeScreenView> {
         ),
       );
     });
+  }
+
+  Stack buildPreviewDesign(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.7,
+          width: MediaQuery.of(context).size.width * 0.95,
+        ),
+        Positioned(
+          bottom: -60,
+          left: 180,
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.6,
+            width: MediaQuery.of(context).size.width * 0.3,
+            decoration: BoxDecoration(color: Colors.green, boxShadow: [
+              BoxShadow(
+                color: Colors.black,
+                spreadRadius: 20,
+                blurRadius: 80,
+              )
+            ]),
+          ),
+        ),
+        Positioned(
+          bottom: -60,
+          right: 180,
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.6,
+            width: MediaQuery.of(context).size.width * 0.3,
+            decoration:
+                BoxDecoration(color: Colors.yellow, borderRadius: BorderRadius.all(Radius.circular(10)), boxShadow: [
+              BoxShadow(
+                color: Colors.black,
+                spreadRadius: 20,
+                blurRadius: 80,
+              )
+            ]),
+          ),
+        ),
+        Positioned(
+          top: 0,
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.6,
+            width: MediaQuery.of(context).size.width * 0.3,
+            decoration:
+                BoxDecoration(color: Colors.red, borderRadius: BorderRadius.all(Radius.circular(10)), boxShadow: [
+              BoxShadow(
+                color: Colors.black,
+                spreadRadius: 20,
+                blurRadius: 80,
+              )
+            ]),
+          ),
+        ),
+      ],
+    );
   }
 
   Text buildAppTitle() => Text('LiveWebTV', style: TextStyle(fontSize: 20, color: Colors.white));
@@ -312,6 +353,36 @@ class _HomeScreenViewState extends State<HomeScreenView> {
             },
             child:
                 Icon(CupertinoIcons.xmark_seal, color: Colors.white, size: MediaQuery.of(context).size.height * 0.03),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class Buttons extends StatelessWidget {
+  final String title;
+  final bool isSelected;
+  final VoidCallback onTap;
+  const Buttons({super.key, required this.title, required this.isSelected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        alignment: Alignment.center,
+        margin: EdgeInsets.symmetric(horizontal: 5),
+        decoration: BoxDecoration(
+          border: Border.all(color: isSelected ? Colors.amber.shade800 : Colors.white),
+          borderRadius: BorderRadius.all(Radius.circular(10)),
+        ),
+        child: Text(
+          title,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: isSelected ? Colors.amber.shade800 : Colors.white,
+            fontSize: 15,
           ),
         ),
       ),
