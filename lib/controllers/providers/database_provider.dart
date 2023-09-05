@@ -185,7 +185,7 @@ class DataBaseProvider extends ChangeNotifier {
         final Map<String, dynamic>? tvChannelsData = documentSnapshot.data() as Map<String, dynamic>?;
 
         if (tvChannelsData != null) {
-          _tvChannelLists.add(tvChannelsData);
+          _liveSportsTvList.add(tvChannelsData);
         }
       },
     );
@@ -266,8 +266,10 @@ class DataBaseProvider extends ChangeNotifier {
   }
 
   getAllDataList(){
+    _allItemsList.clear();
     _allItemsList.addAll(_tvChannelLists);
     _allItemsList.addAll(_allTvLists);
+    _allItemsList.addAll(_bangalTvLists);
     _allItemsList.addAll(_choosedMoviesList);
     _allItemsList.addAll(_documentaryTvList);
     _allItemsList.addAll(_englishTvList);
@@ -276,12 +278,13 @@ class DataBaseProvider extends ChangeNotifier {
     _allItemsList.addAll(_moviesTvList);
     _allItemsList.addAll(_musicTvList);
     _allItemsList.addAll(_kidsTvList);
-    _allItemsList.addAll(_bangalTvLists);
     notifyListeners();
   }
 
   seperateMovies() {
-    _allItemsList.clear();
+    _englishMovie.clear();
+    _hindiMovie.clear();
+    _othersMovie.clear();
     for (int i = 0; i < _choosedMoviesList.length; i++) {
       if(_choosedMoviesList[i]['lan'].contains('english')){
         _englishMovie.add(_choosedMoviesList[i]);

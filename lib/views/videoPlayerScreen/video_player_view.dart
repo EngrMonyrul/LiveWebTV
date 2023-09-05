@@ -1,16 +1,19 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:livewebtv/controllers/providers/database_provider.dart';
+import 'package:livewebtv/controllers/providers/theme_provider.dart';
+import 'package:livewebtv/utils/consts/consts.dart';
+import 'package:livewebtv/views/homeScreen/home_screen_view.dart';
 import 'package:provider/provider.dart';
-
-import '../../controllers/providers/database_provider.dart';
-import '../../controllers/providers/theme_provider.dart';
-import '../../utils/consts/consts.dart';
+import '../../utils/functions/allChannelsList.dart';
 import '../../utils/functions/popup_menu_button_functions.dart';
-import '../homeScreen/home_screen_view.dart';
+import '../videoPlayerScreen/video_player_view.dart';
 
 class VideoPlayerView extends StatefulWidget {
   final int videoIndex;
-  const VideoPlayerView({Key? key, required this.videoIndex}):super(key: key);
+  const VideoPlayerView({Key? key, required this.videoIndex}) : super(key: key);
 
   @override
   State<VideoPlayerView> createState() => _VideoPlayerViewState();
@@ -21,6 +24,48 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   List<Map<String, dynamic>> dataList = [];
   List<Map<String, dynamic>> filteredList = [];
   int selectedIndex = -1;
+  PageController controller = PageController(viewportFraction: 0.12);
+  String selectedAction = 'All Channel';
+  bool isSelected = false;
+  int currentIndex = 0;
+  List<dynamic> allContents = [];
+
+  setAllContents() {
+    final dataPro = Provider.of<DataBaseProvider>(context, listen: false);
+    setState(() {
+      allContents = [
+        dataPro.allTvLists,
+        dataPro.liveSportsTvList,
+        dataPro.tvChannelLists,
+        dataPro.choosedMoviesList,
+        dataPro.moviesTvList,
+        dataPro.musicTvList,
+        dataPro.bangalTvLists,
+        dataPro.englishTvList,
+        dataPro.hindiTvList,
+        dataPro.kidsTvList,
+        dataPro.documentaryTvList,
+      ];
+    });
+  }
+
+  setPageAction(action) {
+    setState(() {
+      selectedAction = action;
+    });
+
+    controller.animateToPage(TvCategory.indexOf(action),
+        curve: Curves.linear, duration: const Duration(milliseconds: 100));
+  }
+
+  setPageController() {
+    controller.addListener(() {
+      int currentIndex = controller.page?.round() ?? 0;
+      setState(() {
+        selectedAction = TvCategory[currentIndex];
+      });
+    });
+  }
 
   void _filterList(String query) {
     setState(() {
@@ -39,7 +84,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     // TODO: implement initState
     final moviesProvider = Provider.of<DataBaseProvider>(context, listen: false);
     dataList.addAll(moviesProvider.allItemsList);
-    // timeDilation = 3;
+    setAllContents();
     super.initState();
   }
 
@@ -54,35 +99,35 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
         ),
         child: Scaffold(
           backgroundColor: Colors.transparent,
-          body: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        buildTvIcon(context),
-                        SizedBox(width: 20),
-                        buildAppTitle(),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        if (!showSearchButton) buildHomeButton(context),
-                        if (!showSearchButton) buildAboutButton(context),
-                        if (!showSearchButton) buildContactButton(context),
-                        if (!showSearchButton) buildSearchButton(context),
-                        if (showSearchButton) buildSearchSysetm(context),
-                        buildPopupMenuButton(context, property),
-                      ],
-                    ),
-                  ],
-                ),
-                if (showSearchButton) buildSearchItems(),
-                SizedBox(height: MediaQuery.sizeOf(context).height * 0.05),
-              ],
+          body: Center(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          buildTvIcon(context),
+                          SizedBox(width: 20),
+                          buildAppTitle(),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          if (!showSearchButton) buildHomeButton(context),
+                          if (!showSearchButton) buildAboutButton(context),
+                          if (!showSearchButton) buildContactButton(context),
+                          if (!showSearchButton) buildSearchButton(context),
+                          if (showSearchButton) buildSearchSysetm(context),
+                          buildPopupMenuButton(context, property),
+                        ],
+                      ),
+                    ],
+                  ),
+                  if (showSearchButton) buildSearchItems(),
+                ],
+              ),
             ),
           ),
         ),
@@ -169,13 +214,17 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
     );
   }
 
-  Expanded buildSearchItems() {
-    return Expanded(
+  Widget buildSearchItems() {
+    return SizedBox(
+      height: MediaQuery.of(context).size.height,
+      width: MediaQuery.of(context).size.width,
       child: ListView.builder(
         itemCount: filteredList.length,
         itemBuilder: (context, index) {
           final itemName = filteredList[index]['name'] as String? ?? 'No Title';
           return Container(
+            height: MediaQuery.of(context).size.height * 0.1,
+            width: MediaQuery.of(context).size.width,
             margin: EdgeInsets.only(
                 top: 2,
                 left: MediaQuery.of(context).size.width * 0.233,
@@ -239,36 +288,6 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
             },
             child:
             Icon(CupertinoIcons.xmark_seal, color: Colors.white, size: MediaQuery.of(context).size.height * 0.03),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class Buttons extends StatelessWidget {
-  final String title;
-  final bool isSelected;
-  final VoidCallback onTap;
-  const Buttons({super.key, required this.title, required this.isSelected, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        alignment: Alignment.center,
-        margin: EdgeInsets.symmetric(horizontal: 5),
-        decoration: BoxDecoration(
-          border: Border.all(color: isSelected ? Colors.amber.shade800 : Colors.white),
-          borderRadius: BorderRadius.all(Radius.circular(10)),
-        ),
-        child: Text(
-          title,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: isSelected ? Colors.amber.shade800 : Colors.white,
-            fontSize: 15,
           ),
         ),
       ),

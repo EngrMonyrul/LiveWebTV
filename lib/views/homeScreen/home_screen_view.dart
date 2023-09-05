@@ -6,11 +6,12 @@ import 'package:livewebtv/controllers/providers/database_provider.dart';
 import 'package:livewebtv/controllers/providers/theme_provider.dart';
 import 'package:livewebtv/utils/consts/consts.dart';
 import 'package:provider/provider.dart';
+import '../../utils/functions/allChannelsList.dart';
 import '../../utils/functions/popup_menu_button_functions.dart';
 import '../videoPlayerScreen/video_player_view.dart';
 
 class HomeScreenView extends StatefulWidget {
-  const HomeScreenView({super.key});
+  const HomeScreenView({Key? key}) : super(key: key);
 
   @override
   State<HomeScreenView> createState() => _HomeScreenViewState();
@@ -24,6 +25,27 @@ class _HomeScreenViewState extends State<HomeScreenView> {
   PageController controller = PageController(viewportFraction: 0.12);
   String selectedAction = 'All Channel';
   bool isSelected = false;
+  int currentIndex = 0;
+  List<dynamic> allContents = [];
+
+  setAllContents() {
+    final dataPro = Provider.of<DataBaseProvider>(context, listen: false);
+    setState(() {
+      allContents = [
+        dataPro.allTvLists,
+        dataPro.liveSportsTvList,
+        dataPro.tvChannelLists,
+        dataPro.choosedMoviesList,
+        dataPro.moviesTvList,
+        dataPro.musicTvList,
+        dataPro.bangalTvLists,
+        dataPro.englishTvList,
+        dataPro.hindiTvList,
+        dataPro.kidsTvList,
+        dataPro.documentaryTvList,
+      ];
+    });
+  }
 
   setPageAction(action) {
     setState(() {
@@ -58,10 +80,10 @@ class _HomeScreenViewState extends State<HomeScreenView> {
   @override
   void initState() {
     // TODO: implement initState
+    super.initState();
     final moviesProvider = Provider.of<DataBaseProvider>(context, listen: false);
     dataList.addAll(moviesProvider.allItemsList);
-    // timeDilation = 3;
-    super.initState();
+    setAllContents();
   }
 
   @override
@@ -75,36 +97,34 @@ class _HomeScreenViewState extends State<HomeScreenView> {
         ),
         child: Scaffold(
           backgroundColor: Colors.transparent,
-          body: Center(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          buildTvIcon(context),
-                          SizedBox(width: 20),
-                          buildAppTitle(),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          if (!showSearchButton) buildHomeButton(context),
-                          if (!showSearchButton) buildAboutButton(context),
-                          if (!showSearchButton) buildContactButton(context),
-                          if (!showSearchButton) buildSearchButton(context),
-                          if (showSearchButton) buildSearchSysetm(context),
-                          buildPopupMenuButton(context, property),
-                        ],
-                      ),
-                    ],
-                  ),
-                  if (showSearchButton) buildSearchItems(),
-                  if (!showSearchButton)
-                  SizedBox(height: MediaQuery.sizeOf(context).height * 0.05),
-                  if (!showSearchButton)
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        buildTvIcon(context),
+                        SizedBox(width: 20),
+                        buildAppTitle(),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        if (!showSearchButton) buildHomeButton(context),
+                        if (!showSearchButton) buildAboutButton(context),
+                        if (!showSearchButton) buildContactButton(context),
+                        if (!showSearchButton) buildSearchButton(context),
+                        if (showSearchButton) buildSearchSysetm(context),
+                        buildPopupMenuButton(context, property),
+                      ],
+                    ),
+                  ],
+                ),
+                if (showSearchButton) buildSearchItems(),
+                if (!showSearchButton) SizedBox(height: MediaQuery.sizeOf(context).height * 0.05),
+                if (!showSearchButton)
                   Text(
                     'Watch All The Shows Free',
                     style: TextStyle(
@@ -112,32 +132,52 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                       color: Colors.white,
                     ),
                   ),
-                  if (!showSearchButton)
-                  SizedBox(height: MediaQuery.sizeOf(context).height * 0.1),
-                  if (!showSearchButton)
-                  buildPreviewDesign(context),
-                  if (!showSearchButton)
-                  SizedBox(height: MediaQuery.sizeOf(context).height * 0.2),
-                  if (!showSearchButton)
-                  Container(
-                    height: MediaQuery.sizeOf(context).height * 0.1,
-                    width: MediaQuery.sizeOf(context).width,
-                    child: PageView.builder(
-                      controller: controller,
-                      itemCount: TvCategory.length,
-                      itemBuilder: (context, index) {
-                        return Buttons(
-                            title: TvCategory[index],
-                            isSelected: selectedAction==TvCategory[index],
-                            onTap:(){
-                              setPageAction(TvCategory[index]);
-                            }
-                        );
-                      },
-                    ),
-                  )
-                ],
-              ),
+                if (!showSearchButton) SizedBox(height: MediaQuery.sizeOf(context).height * 0.1),
+                if (!showSearchButton) buildPreviewDesign(context, dataPro),
+                Container(
+                  height: MediaQuery.sizeOf(context).height * 0.1,
+                  width: MediaQuery.sizeOf(context).width,
+                  margin: const EdgeInsets.only(top: 100),
+                  child: PageView.builder(
+                    controller: controller,
+                    itemCount: TvCategory.length,
+                    onPageChanged: (value) {
+                      setState(() {
+                        currentIndex = value;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      return Buttons(
+                          title: TvCategory[index],
+                          isSelected: selectedAction == TvCategory[index],
+                          onTap: () {
+                            setPageAction(TvCategory[index]);
+                            setState(() {});
+                          });
+                    },
+                  ),
+                ),
+                Container(
+                  height: MediaQuery.of(context).size.height,
+                  width: MediaQuery.of(context).size.width,
+                  margin: const EdgeInsets.only(top: 20),
+                  child: GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 7, mainAxisSpacing: 2, crossAxisSpacing: 2),
+                    itemCount: allContents[currentIndex].length,
+                    itemBuilder: (context, index) {
+                      return Container(
+                        height: MediaQuery.of(context).size.height * 0.05,
+                        width: MediaQuery.of(context).size.width * 0.2,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.all(Radius.circular(10)),
+                        ),
+                      );
+                    },
+                  ),
+                )
+              ],
             ),
           ),
         ),
@@ -145,7 +185,7 @@ class _HomeScreenViewState extends State<HomeScreenView> {
     });
   }
 
-  Stack buildPreviewDesign(BuildContext context) {
+  Stack buildPreviewDesign(BuildContext context, DataBaseProvider dataPro) {
     return Stack(
       alignment: Alignment.center,
       clipBehavior: Clip.none,
@@ -156,33 +196,45 @@ class _HomeScreenViewState extends State<HomeScreenView> {
         ),
         Positioned(
           bottom: -60,
-          left: 180,
+          left: 120,
           child: Container(
             height: MediaQuery.of(context).size.height * 0.6,
             width: MediaQuery.of(context).size.width * 0.3,
-            decoration: BoxDecoration(color: Colors.green, boxShadow: [
-              BoxShadow(
-                color: Colors.black,
-                spreadRadius: 20,
-                blurRadius: 80,
-              )
-            ]),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black,
+                  spreadRadius: 20,
+                  blurRadius: 80,
+                ),
+              ],
+            ),
+            child: ClipRRect(
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+                child: CachedNetworkImage(imageUrl: dataPro.appfeatures[0]['link1'], fit: BoxFit.fill)),
           ),
         ),
         Positioned(
           bottom: -60,
-          right: 180,
+          right: 120,
           child: Container(
             height: MediaQuery.of(context).size.height * 0.6,
             width: MediaQuery.of(context).size.width * 0.3,
-            decoration:
-                BoxDecoration(color: Colors.yellow, borderRadius: BorderRadius.all(Radius.circular(10)), boxShadow: [
-              BoxShadow(
-                color: Colors.black,
-                spreadRadius: 20,
-                blurRadius: 80,
-              )
-            ]),
+            decoration: BoxDecoration(
+              color: Colors.yellow,
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black,
+                  spreadRadius: 20,
+                  blurRadius: 80,
+                ),
+              ],
+            ),
+            // child: ClipRRect(
+            //     borderRadius: BorderRadius.all(Radius.circular(10)),
+            //     child: CachedNetworkImage(imageUrl: dataPro.appfeatures[0]['link2'], fit: BoxFit.fill)),
           ),
         ),
         Positioned(
@@ -283,13 +335,17 @@ class _HomeScreenViewState extends State<HomeScreenView> {
     );
   }
 
-  Expanded buildSearchItems() {
-    return Expanded(
+  Widget buildSearchItems() {
+    return SizedBox(
+      height: MediaQuery.of(context).size.height,
+      width: MediaQuery.of(context).size.width,
       child: ListView.builder(
         itemCount: filteredList.length,
         itemBuilder: (context, index) {
           final itemName = filteredList[index]['name'] as String? ?? 'No Title';
           return Container(
+            height: MediaQuery.of(context).size.height * 0.1,
+            width: MediaQuery.of(context).size.width,
             margin: EdgeInsets.only(
                 top: 2,
                 left: MediaQuery.of(context).size.width * 0.233,
@@ -375,7 +431,7 @@ class Buttons extends StatelessWidget {
         margin: EdgeInsets.symmetric(horizontal: 5),
         decoration: BoxDecoration(
           border: Border.all(color: isSelected ? Colors.amber.shade800 : Colors.white),
-          borderRadius: BorderRadius.all(Radius.circular(10)),
+          borderRadius: const BorderRadius.all(Radius.circular(10)),
         ),
         child: Text(
           title,
