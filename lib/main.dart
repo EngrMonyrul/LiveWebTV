@@ -55,7 +55,6 @@ class MyApp extends StatelessWidget {
         routes: {
           '/': (context) => const SplashScreenView(),
           '/home': (context) => const HomeScreenView(),
-          '/player': (context) => const VideoPlayerView(videoIndex: 0),
         },
       ),
     );

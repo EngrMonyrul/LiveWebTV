@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -7,13 +9,18 @@ import 'package:livewebtv/controllers/providers/theme_provider.dart';
 import 'package:livewebtv/utils/consts/consts.dart';
 import 'package:livewebtv/views/homeScreen/home_screen_view.dart';
 import 'package:provider/provider.dart';
+import 'package:video_player/video_player.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../../utils/functions/allChannelsList.dart';
 import '../../utils/functions/popup_menu_button_functions.dart';
 import '../videoPlayerScreen/video_player_view.dart';
 
 class VideoPlayerView extends StatefulWidget {
-  final int videoIndex;
-  const VideoPlayerView({Key? key, required this.videoIndex}) : super(key: key);
+  String videoLink;
+  String videoName;
+  bool webView;
+  VideoPlayerView({Key? key, required this.videoLink, required this.videoName, required this.webView})
+      : super(key: key);
 
   @override
   State<VideoPlayerView> createState() => _VideoPlayerViewState();
@@ -24,47 +31,36 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
   List<Map<String, dynamic>> dataList = [];
   List<Map<String, dynamic>> filteredList = [];
   int selectedIndex = -1;
-  PageController controller = PageController(viewportFraction: 0.12);
-  String selectedAction = 'All Channel';
-  bool isSelected = false;
-  int currentIndex = 0;
-  List<dynamic> allContents = [];
+  bool videoStart = false;
+  int vProgress = 0;
+  late WebViewController controller;
+  late VideoPlayerController videoPlayerController;
 
-  setAllContents() {
-    final dataPro = Provider.of<DataBaseProvider>(context, listen: false);
-    setState(() {
-      allContents = [
-        dataPro.allTvLists,
-        dataPro.liveSportsTvList,
-        dataPro.tvChannelLists,
-        dataPro.choosedMoviesList,
-        dataPro.moviesTvList,
-        dataPro.musicTvList,
-        dataPro.bangalTvLists,
-        dataPro.englishTvList,
-        dataPro.hindiTvList,
-        dataPro.kidsTvList,
-        dataPro.documentaryTvList,
-      ];
-    });
+  setWebViewController() {
+    controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0x00000000))
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onProgress: (int progress) {
+            // Update loading bar.
+          },
+          onPageStarted: (String url) {},
+          onPageFinished: (String url) {},
+          onWebResourceError: (WebResourceError error) {},
+          onNavigationRequest: (NavigationRequest request) {
+            if (request.url.startsWith('https://www.youtube.com/')) {
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(widget.videoLink));
   }
 
-  setPageAction(action) {
-    setState(() {
-      selectedAction = action;
-    });
-
-    controller.animateToPage(TvCategory.indexOf(action),
-        curve: Curves.linear, duration: const Duration(milliseconds: 100));
-  }
-
-  setPageController() {
-    controller.addListener(() {
-      int currentIndex = controller.page?.round() ?? 0;
-      setState(() {
-        selectedAction = TvCategory[currentIndex];
-      });
-    });
+  setVideoPlayerController(){
+    videoPlayerController = VideoPlayerController.networkUrl(Uri.parse(widget.videoLink));
   }
 
   void _filterList(String query) {
@@ -76,15 +72,23 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
 
   Future<void> goAnotherPage(String value) async {
     int index = dataList.indexWhere((element) => element['name']?.toString().toLowerCase() == value.toLowerCase());
-    Navigator.push(context, MaterialPageRoute(builder: (context) => VideoPlayerView(videoIndex: index)));
+    widget.videoName = dataList[index]['name'];
+    widget.videoLink = dataList[index]['link'];
+    setState(() {
+      showSearchButton = false;
+    });
   }
 
   @override
   void initState() {
     // TODO: implement initState
+    setVideoPlayerController();
+    if(Platform.isAndroid || Platform.isIOS){
+      setWebViewController();
+    }
+    WebViewPlatform.instance;
     final moviesProvider = Provider.of<DataBaseProvider>(context, listen: false);
     dataList.addAll(moviesProvider.allItemsList);
-    setAllContents();
     super.initState();
   }
 
@@ -99,35 +103,71 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
         ),
         child: Scaffold(
           backgroundColor: Colors.transparent,
-          body: Center(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          buildTvIcon(context),
-                          SizedBox(width: 20),
-                          buildAppTitle(),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          if (!showSearchButton) buildHomeButton(context),
-                          if (!showSearchButton) buildAboutButton(context),
-                          if (!showSearchButton) buildContactButton(context),
-                          if (!showSearchButton) buildSearchButton(context),
-                          if (showSearchButton) buildSearchSysetm(context),
-                          buildPopupMenuButton(context, property),
-                        ],
-                      ),
-                    ],
+          body: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        buildTvIcon(context),
+                        SizedBox(width: 20),
+                        buildAppTitle(),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        if (!showSearchButton) buildHomeButton(context),
+                        if (!showSearchButton) buildAboutButton(context),
+                        if (!showSearchButton) buildContactButton(context),
+                        if (!showSearchButton) buildSearchButton(context),
+                        if (showSearchButton) buildSearchSysetm(context),
+                        buildPopupMenuButton(context, property),
+                      ],
+                    ),
+                  ],
+                ),
+                if (showSearchButton) buildSearchItems(),
+                if (!showSearchButton)
+                  Text(
+                    widget.videoName,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      color: Colors.white,
+                    ),
                   ),
-                  if (showSearchButton) buildSearchItems(),
-                ],
-              ),
+                if (!showSearchButton && widget.webView)
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height,
+                    width: MediaQuery.of(context).size.width,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          height: MediaQuery.of(context).size.height * 0.9,
+                          width: MediaQuery.of(context).size.width * 0.9,
+                          decoration: const BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.all(Radius.circular(10)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black,
+                                blurRadius: 10,
+                                spreadRadius: 10,
+                                offset: Offset(5, 5),
+                              ),
+                            ],
+                          ),
+                          child:
+                              Platform.isAndroid || Platform.isIOS ? WebViewWidget(controller: controller) : VideoPlayer(videoPlayerController),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -287,7 +327,7 @@ class _VideoPlayerViewState extends State<VideoPlayerView> {
               });
             },
             child:
-            Icon(CupertinoIcons.xmark_seal, color: Colors.white, size: MediaQuery.of(context).size.height * 0.03),
+                Icon(CupertinoIcons.xmark_seal, color: Colors.white, size: MediaQuery.of(context).size.height * 0.03),
           ),
         ),
       ),

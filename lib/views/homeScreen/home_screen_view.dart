@@ -61,6 +61,7 @@ class _HomeScreenViewState extends State<HomeScreenView> {
       int currentIndex = controller.page?.round() ?? 0;
       setState(() {
         selectedAction = TvCategory[currentIndex];
+        print(selectedAction);
       });
     });
   }
@@ -74,7 +75,14 @@ class _HomeScreenViewState extends State<HomeScreenView> {
 
   Future<void> goAnotherPage(String value) async {
     int index = dataList.indexWhere((element) => element['name']?.toString().toLowerCase() == value.toLowerCase());
-    Navigator.push(context, MaterialPageRoute(builder: (context) => VideoPlayerView(videoIndex: index)));
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => VideoPlayerView(
+                  videoLink: dataList[index]['link'],
+                  videoName: dataList[index]['name'],
+                  webView: dataList[index]['wv'],
+                )));
   }
 
   @override
@@ -84,6 +92,7 @@ class _HomeScreenViewState extends State<HomeScreenView> {
     final moviesProvider = Provider.of<DataBaseProvider>(context, listen: false);
     dataList.addAll(moviesProvider.allItemsList);
     setAllContents();
+    setPageController();
   }
 
   @override
@@ -125,7 +134,7 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                 if (showSearchButton) buildSearchItems(),
                 if (!showSearchButton) SizedBox(height: MediaQuery.sizeOf(context).height * 0.05),
                 if (!showSearchButton)
-                  Text(
+                  const Text(
                     'Watch All The Shows Free',
                     style: TextStyle(
                       fontSize: 30,
@@ -152,7 +161,6 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                           isSelected: selectedAction == TvCategory[index],
                           onTap: () {
                             setPageAction(TvCategory[index]);
-                            setState(() {});
                           });
                     },
                   ),
@@ -166,17 +174,36 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                         crossAxisCount: 7, mainAxisSpacing: 2, crossAxisSpacing: 2),
                     itemCount: allContents[currentIndex].length,
                     itemBuilder: (context, index) {
-                      return Container(
-                        height: MediaQuery.of(context).size.height * 0.05,
-                        width: MediaQuery.of(context).size.width * 0.2,
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.all(Radius.circular(10)),
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => VideoPlayerView(
+                                        videoLink: allContents[currentIndex][index]['link'],
+                                        videoName: allContents[currentIndex][index]['name'],
+                                        webView: allContents[currentIndex][index]['wv'],
+                                      )));
+                        },
+                        child: Container(
+                          height: MediaQuery.of(context).size.height * 0.05,
+                          width: MediaQuery.of(context).size.width * 0.2,
+                          decoration: const BoxDecoration(
+                            borderRadius: BorderRadius.all(Radius.circular(10)),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.all(Radius.circular(10)),
+                            child: CachedNetworkImage(
+                              imageUrl: allContents[currentIndex][index]['image'],
+                            ),
+                          ),
                         ),
                       );
                     },
                   ),
-                )
+                ),
+                const Text('Copyright @LiveWebTV', style: TextStyle(color: Colors.white, fontSize: 20)),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.05)
               ],
             ),
           ),
@@ -221,7 +248,7 @@ class _HomeScreenViewState extends State<HomeScreenView> {
           child: Container(
             height: MediaQuery.of(context).size.height * 0.6,
             width: MediaQuery.of(context).size.width * 0.3,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Colors.yellow,
               borderRadius: BorderRadius.all(Radius.circular(10)),
               boxShadow: [
@@ -232,9 +259,9 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                 ),
               ],
             ),
-            // child: ClipRRect(
-            //     borderRadius: BorderRadius.all(Radius.circular(10)),
-            //     child: CachedNetworkImage(imageUrl: dataPro.appfeatures[0]['link2'], fit: BoxFit.fill)),
+            child: ClipRRect(
+                borderRadius: const BorderRadius.all(Radius.circular(10)),
+                child: CachedNetworkImage(imageUrl: dataPro.appfeatures[0]['link2'], fit: BoxFit.fill)),
           ),
         ),
         Positioned(
@@ -250,6 +277,9 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                 blurRadius: 80,
               )
             ]),
+            child: ClipRRect(
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+                child: CachedNetworkImage(imageUrl: dataPro.appfeatures[0]['link3'], fit: BoxFit.fill)),
           ),
         ),
       ],
